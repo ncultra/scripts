@@ -1,3 +1,5 @@
+#!/bin/bash
+
 TARGET_LIST=""
 BUILD_DIR="."
 CHECK=0
