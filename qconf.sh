@@ -55,6 +55,10 @@ if [ $CONF -ne 0 ] ; then
 	git submodule update --init dtc
     fi 
 
+    if [ ! -f roms/SLOF/.git ] ; then 
+	git submodule update --init roms/SLOF
+    fi
+
     ./configure --target-list=$TARGET_LIST
 
 # if we don't have the checkpatch hook installed, do it now
