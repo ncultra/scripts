@@ -1,7 +1,10 @@
 #!/bin/bash
 
 usage() {
-    echo "$0 --old=<file> to copy an existing config file"
+    echo "$0 -- a utility to help configure kernel builds"
+    echo "$0 --old=<file> copy an existing config file into a new .config"
+    echo "$0 --kbuild=<dir> set kernel build directory (if not pwd)"
+    echo "$0 --local=<string> add a local version string to the .config in \$kbuild"
 }
 
 OLD_CONF=""
@@ -39,6 +42,7 @@ until [ -z "$1" ]; do
             "old") OLD_CONF="${1##--old=}";;
             "kbu") KBUILD="${1##--kbuild=}";;
 	    "loc") LOCAL_CONF_STRING="${1##--local=}";;
+	    "hel") usage;;
         esac ;;
 	*)usage;;
     esac
