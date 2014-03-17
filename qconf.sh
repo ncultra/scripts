@@ -7,13 +7,20 @@ MAKE=0
 CONF=0
 CLEAN=0
 INSTALL=0
+OPTIONS=""
 
 usage() {
-    echo "$0 --x86 or ppc  to configure for the x86 or ppc64 target only"
-    echo "$0 --long to configure for x86, s390, ppc64 and arm targets"
-    echo "$0 --med to configure for x86 and ppc64 targets"
-    echo "$0 --all to configure for all targets (default)"
-    echo "add the --dir=<dir> parameter to specify a working directory"
+    echo "qconf.sh --x86 or ppc  to configure for the x86 or ppc64 target only"
+    echo "         --long to configure for x86, s390, ppc64 and arm targets"
+    echo "         --med to configure for x86 and ppc64 targets"
+    echo "         --all to configure for all targets (default)"
+    echo "         --dir=<build directory>"
+    echo "         --make  buld qemu"
+    echo "         --check run make check"
+    echo "         --clean run make clean"
+    echo "         --install run make install"
+    echo "         --conf <options to pass to configure>"
+    echo "--conf must be last on the command line"
 }
 
 if [ $# -lt 1 ] ; then
@@ -38,13 +45,14 @@ until [ -z "$1" ]; do
 	    "cle") CLEAN=1;;
 	    "ins") INSTALL=1;;
 	    "mak") MAKE=1;;
+# "con" - configure options must be last on the command line
+	    "con") shift; OPTIONS=$@;;
+		
         esac ;;
         *)usage;;
     esac
         shift;
 done
-
-echo "$CONF, $CHECK, $MAKE, $CLEAN"
 
 if [ $CONF -ne 0 ] ; then
     pushd $BUILD_DIR
@@ -59,7 +67,7 @@ if [ $CONF -ne 0 ] ; then
 	git submodule update --init roms/SLOF
     fi
 
-    ./configure --target-list=$TARGET_LIST
+    ./configure --target-list=$TARGET_LIST $OPTIONS
 
 # if we don't have the checkpatch hook installed, do it now
     if [ ! -f .git/hooks/pre-commit ] ; then
