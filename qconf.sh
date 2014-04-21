@@ -2,17 +2,21 @@
 
 TARGET_LIST=""
 BUILD_DIR="."
+TRACE=""
+OPTIONS=""
 CHECK=0
 MAKE=0
 CONF=0
 CLEAN=0
 INSTALL=0
-OPTIONS=""
+DRY_RUN=0
 
 usage() {
     echo "qconf.sh --x86 or ppc  to configure for the x86 or ppc64 target only"
     echo "         --long to configure for x86, s390, ppc64 and arm targets"
     echo "         --med to configure for x86 and ppc64 targets"
+    echo "         --trace to enable tracing with the simple backend"
+    echo "               (trace will be logged to /var/log/trace.txt)"
     echo "         --all to configure for all targets (default)"
     echo "         --dir=<build directory>"
     echo "         --make  buld qemu"
@@ -20,12 +24,17 @@ usage() {
     echo "         --clean run make clean"
     echo "         --install run make install"
     echo "         --conf <options to pass to configure>"
+    echo "         --dry-run print the configure command line and exit"
     echo "--conf must be last on the command line"
+    exit 1
 }
 
-if [ $# -lt 1 ] ; then
+check_parms() {
+    if (($CONF != 0 )) ; then
+	return 0
+    fi
     usage
-fi
+}
 
 until [ -z "$1" ]; do    
     case "${1:0:2}" in
@@ -38,6 +47,8 @@ until [ -z "$1" ]; do
 		   TARGET_LIST="ppc64-softmmu,x86_64-softmmu";;
 	    "ppc") CONF=1; 
 		   TARGET_LIST="ppc64-softmmu";;
+	    "tra") CONF=1;
+		   TRACE='--enable-trace-backend=simple --with-trace-file=trace.txt';;
             "all") CONF=1;;
 	    "dir") BUILD_DIR="${1##--dir=}";;
             "hel") usage ;;
@@ -45,6 +56,8 @@ until [ -z "$1" ]; do
 	    "cle") CLEAN=1;;
 	    "ins") INSTALL=1;;
 	    "mak") MAKE=1;;
+	    "dry") DRY_RUN=1;;
+
 # "con" - configure options must be last on the command line
 	    "con") shift; OPTIONS=$@;;
 		
@@ -53,6 +66,14 @@ until [ -z "$1" ]; do
     esac
         shift;
 done
+
+check_parms
+
+if [ $DRY_RUN -ne 0 ] ; then
+   echo "./configure --target-list=$TARGET_LIST $TRACE $OPTIONS"
+   exit 1
+fi
+
 
 if [ $CONF -ne 0 ] ; then
     pushd $BUILD_DIR
@@ -67,7 +88,7 @@ if [ $CONF -ne 0 ] ; then
 	git submodule update --init roms/SLOF
     fi
 
-    ./configure --target-list=$TARGET_LIST $OPTIONS
+    ./configure --target-list=$TARGET_LIST $TRACE $OPTIONS
 
 # if we don't have the checkpatch hook installed, do it now
     if [ ! -f .git/hooks/pre-commit ] ; then
