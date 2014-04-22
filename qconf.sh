@@ -122,7 +122,7 @@ fi
 
 if [ $MAKE -ne 0 ] ; then
     pushd "$BUILD_DIR"
-    make 
+    make -j8
     popd
 fi
 
