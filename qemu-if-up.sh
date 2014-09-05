@@ -23,7 +23,7 @@ if_down() {
     local TAP_DEVICE=$(ip link show | grep macvtap | awk '{print $2}')
 
     TAP_DEVICE=$(expr $TAP_DEVICE : '\(macvtap[0-9]\{1,5\}\)')
-    ip link set dev $TAP_DEVICE down
+    ip link set $TAP_DEVICE down
     ip link del $TAP_DEVICE
     exit 0
 }
