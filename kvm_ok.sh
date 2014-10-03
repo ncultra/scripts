@@ -1,5 +1,8 @@
-#!/usr/bin/bash   
-# path ok for fedora - TODO update for other distros
+#!/bin/bash   
+# /bin/bash is still the standard for all distros.
+# - http://rpmfind.net//linux/RPM/fedora/devel/rawhide/x86_64/b/bash-4.3.25-2.fc22.x86_64.html
+# - https://packages.debian.org/sid/amd64/bash/filelist
+
 
 # print the amount of memory
 echo "Your computer should have 2 GB of RAM or more for this course."
