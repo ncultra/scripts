@@ -21,7 +21,7 @@ copy_conf() {
  
     cp $1 .config
 # generate a new .config using all defaults for new options
-    yes '' | make oldconfig &>/dev/null
+    yes '' | make olddefconfig &>/dev/null
 
 }
 
