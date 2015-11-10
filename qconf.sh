@@ -16,7 +16,7 @@ usage() {
     echo "         --long to configure for x86, s390, ppc64 and arm targets"
     echo "         --med to configure for x86 and ppc64 targets"
     echo "         --trace to enable tracing with the simple backend"
-    echo "               (trace will be logged to /var/log/trace.txt)"
+    echo "               (trace will be logged to $(pwd)/trace.txt)"
     echo "         --all to configure for all targets (default)"
     echo "         --dir=<build directory>"
     echo "         --make  buld qemu"
