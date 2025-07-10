@@ -47,6 +47,24 @@ run_cmd()
 	}
 }
 
+config_bpf()
+{
+    run_cmd ./scripts/config --enable CONFIG_BPF
+    run_cmd ./scripts/config --enable CONFIG_BPF_SYSCALL
+    run_cmd ./scripts/config --enable CONFIG_BPF_JIT
+    run_cmd ./scripts/config --enable HAVE_EBPF_JIT
+    run_cmd ./scripts/config --enable ARCH_WANT_DEFAULT_BPF_JIT
+    run_cmd ./scripts/config --enable CONFIG_DEBUG_INFO_BTF
+    run_cmd ./scripts/config --enable CONFIG_DEBUG_INFO_BTF_MODULES
+
+    run_cmd ./scripts/config --enable CONFIG_UPROBES
+    run_cmd ./scripts/config --enable CONFIG_UPROBE_EVENTS
+    run_cmd ./scripts/config --enable CONFIG_FTRACE
+    run_cmd ./scripts/config --enable CONFIG_TRACING
+    run_cmd ./scripts/config --enable CONFIG_FTRACE_SYSCALLS
+
+}
+
 config_tmpm()
 {
     run_cmd ./scripts/config --enable CONFIG_NUMA_EMU
@@ -103,7 +121,7 @@ config_kernel()
     run_cmd ./scripts/config --enable CRYPTO_DEV_SP_PSP
     run_cmd ./scripts/config --enable  CONFIG_CRYPTO_DEV_CCP
     run_cmd ./scripts/config --enable CRYPTO_DEV_CCP_CRYPTO
-#	run_cmd ./scripts/config --enable CONFIG_KVM_AMD_SEV
+
     run_cmd ./scripts/config --enable CONFIG_X86_CPUID
     run_cmd ./scripts/config --enable EFI
     run_cmd ./scripts/config --enable EFI_STUB
@@ -186,7 +204,24 @@ config_kernel()
     run_cmd ./scripts/config --enable TSM_GUEST
     run_cmd ./scripts/config --enable TSM_HOST
 
+
+    run_cmd ./scripts/config --enable CONFIG_BPF
+    run_cmd ./scripts/config --enable CONFIG_BPF_SYSCALL
+    run_cmd ./scripts/config --enable CONFIG_BPF_JIT
+    run_cmd ./scripts/config --enable HAVE_EBPF_JIT
+    run_cmd ./scripts/config --enable ARCH_WANT_DEFAULT_BPF_JIT
+    run_cmd ./scripts/config --enable CONFIG_DEBUG_INFO_BTF
+    run_cmd ./scripts/config --enable CONFIG_DEBUG_INFO_BTF_MODULES
+
+    run_cmd ./scripts/config --enable CONFIG_UPROBES
+    run_cmd ./scripts/config --enable CONFIG_UPROBE_EVENTS
+    run_cmd ./scripts/config --enable CONFIG_FTRACE
+    run_cmd ./scripts/config --enable CONFIG_TRACING
+    run_cmd ./scripts/config --enable CONFIG_FTRACE_SYSCALLS
+
     run_cmd ./scripts/config --disable MCR
+
+    run_cmd ./scripts/config --module CONFIG_KSB
 
 }
 
@@ -228,7 +263,7 @@ build_kernel()
 		# of date, so always update the remote URL first. Also handle case
 		# where AMDSEV scripts are updated while old kernel repos are still in
 		# the directory without a 'current' remote
-		pushd ${V} >/dev/nullpo
+		pushd ${V} >/dev/null
 		if git remote get-url current 2>/dev/null; then
 			run_cmd git remote set-url current ${KERNEL_GIT_URL}
 		else
@@ -256,15 +291,17 @@ build_kernel()
 
 			run_cmd ./scripts/config --disable LOCALVERSION_AUTO
 
-			config_kernel
+			#			config_kernel
+			config_bpf
 
+			grep -n CRYPTO_DEV_CCP_CRYPTO .config
 			run_cmd ./scripts/config --disable TRANSPARENT_HUGEPAGE
 			run_cmd ./scripts/config --disable COMPACTION
 
 			run_cmd echo $COMMIT >../../source-commit.kernel.$V
 		popd >/dev/null
 
-		yes "" | $MAKE olddefconfig
+#		yes "" | $MAKE olddefconfig
 
 		# Build
 		run_cmd $MAKE >/dev/null
