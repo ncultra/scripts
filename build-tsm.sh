@@ -12,8 +12,8 @@ config_kernel_simple()
 	run_cmd "cp /boot/config-$(uname -r) .config"
     fi
     run_cmd ./scripts/config --set-str CONFIG_LOCALVERSION "${LOCAL_VER//\//-}"
-    run_cmd ./scripts/config --enable CONFIG_GUESTMEM_HUGETLB
     yes "" | make olddefconfig
+    run_cmd ./scripts/config --enable CONFIG_GUESTMEM_HUGETLB
     RESET_OWNER=1
 }
 
@@ -63,9 +63,10 @@ fi
 MY_UID="mdday"
 RESET_OWNER=0
 BPF=0
+RESERVE_PROCS=12
 
 # save a small number of threads for things other than building the kernel
-NPROC=$(( $(nproc) - 12 ))
+NPROC=$(( $(nproc) - $RESERVE_PROCS ))
 
 TEMP=$(getopt -o 'ibch' -l 'bpf','build','clean','config','help','install' -n'build-tsm.sh' -- "$@")
 if [ $? -ne 0 ]; then
