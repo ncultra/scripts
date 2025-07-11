@@ -19,7 +19,7 @@ config_kernel_simple()
 
 copy_config_bpf()
 {
-    if [[ ! -e ".config" ]] ; then
+    if [[ ! -e ".config" ]]; then
 	config_kernel_simple
     fi
     config_bpf
@@ -29,7 +29,7 @@ copy_config_bpf()
 
 build_kernel_simple()
 {
-    if [[ ! -e ".config" ]] ; then
+    if [[ ! -e ".config" ]]; then
 	config_kernel_simple
     fi
 
@@ -55,7 +55,7 @@ build_kernel_install()
     make install
 }
 
-if (( "$EUID" != 0 )); then
+if [[ "$EUID" != 0 ]]; then
   echo "Error: This script must be run as root." >&2
   exit 1
 fi
@@ -96,6 +96,6 @@ while true ; do
     esac
 done
 
-if [[ $RESET_OWNER -ne 0 ]]; then
+if [[ $RESET_OWNER != 0 ]]; then
     run_cmd "chown -R $MY_UID:$MY_UID ./* ./.*"
 fi
