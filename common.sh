@@ -47,6 +47,16 @@ run_cmd()
 	}
 }
 
+config_for_gmem_tlb()
+{
+    run_cmd ./scripts/config --enable KVM_GMEM
+    run_cmd ./scripts/config --enable KVM_GENERIC_GMEM_POPULATE
+    run_cmd ./scripts/config --enable HAVE_KVM_ARCH_GMEM_PREPARE
+    run_cmd ./scripts/config --enable HAVE_KVM_ARCH_GMEM_INVALIDATE
+    run_cmd ./scripts/config --enable KVM_GMEM_SHARED_MEM
+    run_cmd ./scripts/config --enable KVM_GMEM_HUGETLB
+}
+
 config_bpf()
 {
     run_cmd ./scripts/config --enable CONFIG_BPF

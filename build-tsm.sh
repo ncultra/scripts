@@ -13,17 +13,8 @@ config_kernel_simple()
     fi
     run_cmd ./scripts/config --set-str CONFIG_LOCALVERSION "${LOCAL_VER//\//-}"
     yes "" | make olddefconfig
-    run_cmd ./scripts/config --enable CONFIG_GUESTMEM_HUGETLB
-    RESET_OWNER=1
-}
-
-copy_config_bpf()
-{
-    if [[ ! -e ".config" ]]; then
-	config_kernel_simple
-    fi
+    config_for_gmem_tlb
     config_bpf
-    yes "" | make olddefconfig
     RESET_OWNER=1
 }
 
@@ -31,10 +22,6 @@ build_kernel_simple()
 {
     if [[ ! -e ".config" ]]; then
 	config_kernel_simple
-    fi
-
-    if (( $BPF != 0 )); then
-	copy_config_bpf
     fi
 
     make -j $NPROC
@@ -55,10 +42,7 @@ build_kernel_install()
     make install
 }
 
-if [[ "$EUID" != 0 ]]; then
-  echo "Error: This script must be run as root." >&2
-  exit 1
-fi
+[[ $EUID != 0 ]] && echo "must be executed as root" && exit 1
 
 MY_UID="mdday"
 RESET_OWNER=0
@@ -79,13 +63,11 @@ unset TEMP
 
 while true ; do
     case "$1" in
-	'-b' | '--bpf' ) BPF=1; shift; copy_config_bpf; continue;;
 	'--build' ) shift; build_kernel_simple; continue;;
 	'-c' | '--clean' ) shift; clean_kernel; continue;;
 	'--config' ) shift; config_kernel_simple; continue;;
 	'-i' | '--install' ) shift; build_kernel_install; continue;;
-	'-h' | '--help' ) echo "--bpf configure to include eBPF";
-			  echo "--build rebuild kernel";
+	'-h' | '--help' ) echo "--build rebuild kernel";
 			  echo "--clean make clean";
 			  echo "--config kernel";
 			  echo "--install install kernel";
@@ -97,5 +79,5 @@ while true ; do
 done
 
 if [[ $RESET_OWNER != 0 ]]; then
-    run_cmd "chown -R $MY_UID:$MY_UID ./* ./.*"
+    run_cmd "chown -R $MY_UID:$MY_UID * .*"
 fi

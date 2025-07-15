@@ -1,49 +1,55 @@
 #!/usr/bin/env bash
 
+check_root_user() {
+    [[ $EUID != 0 ]] && echo "must be executed as root" && exit 1
+}
+
 # device
 setup() {
-
     echo To program: sudo ./KSB-B0-dbg-2402/ksb.sh source run_com_unified.tcl
     echo To reload everything: sudo rmmod vfio_pci vfio_pci_core vfio iommufd kvm_amd kvm ccp tsm ide
-    sudo modprobe ccp
-    sudo modprobe tmpm
-    sudo modprobe kvm_amd
+    modprobe ccp
+    modprobe tmpm
+    modprobe kvm_amd
     set -x
     sync
-    sudo dmesg -n 8
-    sudo echo 0 > /sys/module/doe/parameters/delay
-    sudo modprobe tsm # Do not normally need this unless rmmod'd
-    sudo modprobe ksb_pci_drv
+    dmesg -n 8
+    echo 0 > /sys/module/doe/parameters/delay
+    modprobe tsm # Do not normally need this unless rmmod'd
+    modprobe ksb_pci_drv
 
-#    sudo  echo 1 > /sys/bus/pci/devices/"${V_FUNCS}"/sriov_numvfs
+#     echo 1 > /sys/bus/pci/devices/"${V_FUNCS}"/sriov_numvfs
 
-    sudo  echo "RUN: Selective stream 0" > /dev/kmsg
+     echo "RUN: Selective stream 0" > /dev/kmsg
 
-    #sudo  echo 1 > /sys/bus/pci/devices/"${1}"/tsm_pci_tc_mask
+    # echo 1 > /sys/bus/pci/devices/"${1}"/tsm_pci_tc_mask
 
-    #sudo  echo 1 > /sys/bus/pci/devices/"${1}"/tsm_tc_mask
+    # echo 1 > /sys/bus/pci/devices/"${1}"/tsm_tc_mask
 
     # cert_slot must be 0 for now
-    sudo  echo 0 > /sys/bus/pci/devices/"${1}"/tsm_dev/tsm_cert_slot
+     echo 0 > /sys/bus/pci/devices/"${1}"/tsm_dev/tsm_cert_slot
     cat /sys/bus/pci/devices/"${1}"/tsm_dev/tsm_cert_slot
-#    sudo  echo 2 > /sys/bus/pci/devices/"${1}"/tsm_dev/tsm_dev_connect
+#     echo 2 > /sys/bus/pci/devices/"${1}"/tsm_dev/tsm_dev_connect
     cat /sys/bus/pci/devices/"${1}"/tsm_dev/tsm_dev_connect
-    sudo  echo "RUN: DEV_CONNECT done" > /dev/kmsg
-    sudo  echo 1 > /sys/module/kvm/parameters/gmem_2m_enabled
-    cat /sys/module/kvm/parameters/gmem_2m_enabled
+     echo "RUN: DEV_CONNECT done" > /dev/kmsg
+    [[ -e /sys/module/kvm/parameters/gmem_2m_enabled ]] &&
+	echo 1 > /sys/module/kvm/parameters/gmem_2m_enabled
+
+    [[ -e /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages ]] &&
+	echo $GUEST_NPAGES > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
 }
 
 # $1 device_number
 __bind() {
     pushd $TARGET &>/dev/null
     set -x
-    sudo modprobe vfio_pci
-    sudo echo ""${1}"" > /sys/bus/pci/devices/"${1}"/driver/unbind
-    sudo echo vfio-pci > /sys/bus/pci/devices/"${1}"/driver_override
-    sudo echo ""${1}"" > /sys/bus/pci/drivers/vfio-pci/bind
-    sudo echo '' > /sys/bus/pci/devices/"${1}"/driver_override
+    modprobe vfio_pci
+    echo ""${1}"" > /sys/bus/pci/devices/"${1}"/driver/unbind
+    echo vfio-pci > /sys/bus/pci/devices/"${1}"/driver_override
+    echo ""${1}"" > /sys/bus/pci/drivers/vfio-pci/bind
+    echo '' > /sys/bus/pci/devices/"${1}"/driver_override
     sleep 1
-    sudo chown amd:amd /dev/vfio/* /dev/vfio/vfio* /dev/iommu
+    chown amd:amd /dev/vfio/* /dev/vfio/vfio* /dev/iommu
     popd &>/dev/null
 }
 
@@ -64,7 +70,7 @@ build_cmdline() {
     add_opts "-machine q35,memory-encryption=sev0,memory-backend=ram1,vmport=off "
     add_opts "-object memory-backend-memfd,id=ram1,size=512M,share=true,prealloc=false "
     add_opts "-device virtio-scsi-pci,id=vscsi0,iommu_platform=true,disable-modern=off,disable-legacy=on,romfile= "
-    add_opts "-bios ${BIOS} -cpu EPYC-v4 -object sev-snp-guest,id=sev0,cbitpos=51,reduced-phys-bits=1 "
+    add_opts "-bios ${BIOS} -cpu EPYC-v4 -object sev-snp-guest,id=sev0,cbitpos=51,reduced-phys-bits=1,convert-in-place=true,gmem-allocator=hugetlb,gmem-page-size=2097152 "
 
     add_opts "-device isa-serial,id=isa-serial0,chardev=STDIO0 "
     add_opts "-nographic -vga none  -chardev stdio,id=STDIO0,signal=off,mux=on "
@@ -140,7 +146,9 @@ parse_device () {
 
 TARGET="/home/mdday/src"
 HDA="u2204_128G_tsm_0.80.qcow2"
-QEMU_EXE="./qemu-system-x86_64.tsm"
+#QEMU_EXE="./qemu-system-x86_64.tsm"
+QEMU_EXE="./qemu/build/qemu-system-x86_64"
+
 BIOS="OVMF.fd.tsm"
 KERNEL_FILE="/boot/vmlinuz-$(uname -r)"
 APPEND_KCMD_LINE="root=UUID=2e220180-8789-487a-8016-52fdeb59554b ro debug loglevel=8 console=ttyS0 earlyprintk=serial accept_memory=eager"
@@ -154,8 +162,13 @@ V_FUNCS=4
 V_DEV=4
 SNAPSHOT=""
 
+GUEST_SIZE=512
+GUEST_NPAGES=$(( $GUEST_SIZE / 2 ))
+
 QEMU_CMDLINE=/tmp/cmdline.$$
 rm -rf $QEMU_CMDLINE
+
+check_root_user
 
 TEMP=$(getopt -o 'h' -l 'help','target:','drive:','bios:','show-defaults','show-cmdline','device:','setup','bind','vfuncs:','hotplug','qemu:','test:','reprogram','snapshot' -n'qemu-launch.sh' -- "$@")
 if [ $? -ne 0 ]; then
